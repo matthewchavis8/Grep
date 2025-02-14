@@ -1,31 +1,45 @@
 #include <iostream>
-#include <string_view>
-#include <fstream>
-#include "configure.h"
-
-using std::cout, std::cin, std::cerr;
+#include "grep.h"
+#include "args.h"
 
 int main (int argc, char* argv[]) {
-   
-    std::ifstream inputFile;
+    args::ArgParser cli;
+    Grep grep;
 
-    std::string query = argv[1];
-    std::string file = argv[2];
+    cli.option("out o", "grep.txt");
+    cli.option("pattern r", "");
+    cli.flag("case-sensitive i");
 
-    Configure config(query, file);
+    cli.parse(argc, argv);
 
-    inputFile.open(config.getFile());
-
-    if (!inputFile.is_open()) {
-        cerr << "Error opening file!" << '\n';
-        std::exit(1);
+    auto size = cli.args.size();
+    
+    //Gives options to user to turn on insensitve, output to file, or regex patterns
+    if (cli.found("i"))
+        grep.case_sensitive = true;
+    if (cli.found("o"))
+        grep.path = cli.value("out");
+    if (cli.found("r"))
+        grep.pattern = cli.value("r");
+    
+    if (size == 1)
+        grep.path = cli.args[0];
+    else if (size == 2) {
+        grep.word = cli.args[0];
+        grep.path = cli.args[1];
+        grep.pattern = cli.args[0];
+    } else {
+        std::cerr << "not enough arguments supplied" << '\n';
     }
 
-    std::string line;
-    while (std::getline(inputFile, line))
-        cout << line << '\n';
-    
-    inputFile.close();
-
-    return 0;
+    if (grep.run()) {
+        for (auto &line : grep.lines_found) {
+            if (cli.found("o"))
+                grep.write_to_file(line);
+            else 
+                std::cout << line << '\n';
+        }
+    } else {
+        std::cerr << "An error has occured parsing file!" << '\n';
+    }
 }
