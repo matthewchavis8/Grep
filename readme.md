@@ -4,6 +4,7 @@ The grep command line utility was first introduced in 1974 as a method of search
 
 ### How to Build
 
+```bash
 Clone the repository and run the following commands:
 cd into the repo
 Type mkdir build && cd build
